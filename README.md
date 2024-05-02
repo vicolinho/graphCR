@@ -6,7 +6,7 @@ Repair</h2>
 Description
 ========
 This project consists of the source code for the submitted paper with the title "Graph-based Active Learning for Entity Cluster
-Repair" on the ESWC2024 conference.
+Repair".
 
 
 
