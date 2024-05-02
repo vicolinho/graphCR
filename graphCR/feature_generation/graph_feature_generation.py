@@ -31,6 +31,8 @@ def generate_features(graph: Graph, cluster, features):
             node_feature = networkx.closeness_centrality(graph, distance=constant.DISTANCE)
         elif feature == constant.CLUSTER_COEFF:
             node_feature = networkx.clustering(graph, weight='sim')
+        elif feature == constant.EIGENVECTOR:
+            node_feature = networkx.eigenvector_centrality(graph, weight='sim')
         elif feature == constant.DEGREE:
             for n in graph.nodes():
                 degree_weight = networkx.degree(graph, n, weight='sim')
@@ -123,6 +125,7 @@ def edge_feature_generation_complete(graph: Graph, edge_features=[]) -> Graph:
                 vec_edge = graph[u][v][constant.FEATURE_VECTOR]
                 vec_edge = np.hstack((np.asarray([complete_ratio]), vec_edge))
                 graph[u][v][constant.FEATURE_VECTOR] = vec_edge
+
     for u in graph.nodes():
         for v in graph.nodes():
             if u != v and not graph.has_edge(u, v):
@@ -342,3 +345,4 @@ def normalize(data, mean_cov=None, inverse=False, return_mean_cov=False):
         return data, (mean, cov)
     else:
         return data
+

@@ -8,11 +8,11 @@ from typing import List
 
 import matplotlib.pyplot as plt
 
-from graphCR.data.cluster import Cluster
-from graphCR.feature_generation import graph_construction
+from lm3kal.data.cluster import Cluster
+from lm3kal.feature_generation import graph_construction
 
-from graphCR.data.entity import Entity
-from graphCR.data.test_data import famer_constant
+from lm3kal.data.entity import Entity
+from lm3kal.data.test_data import famer_constant
 import networkx as nx
 import csv
 
@@ -76,16 +76,13 @@ def read_json_famer_data(input_folder: str, error_edge_ratio=0.1):
     return entities, cluster_graphs, cluster_list
 
 
-def pollute_edges(edge_list: list, edge_error_ratio):
-    if edge_error_ratio > 0:
-        random.shuffle(edge_list)
-        dis_edges = edge_list[:round(edge_error_ratio*len(edge_list))]
-        noise_edges = []
-        for e in dis_edges:
-            noise_edges.append((e[0], e[1], random.uniform(0.05, 1)))
-        return edge_list[round(edge_error_ratio*len(edge_list)):] + noise_edges
-    else:
-        return edge_list
+def pollute_edges(edge_list:list, edge_error_ratio):
+    random.shuffle(edge_list)
+    dis_edges = edge_list[:round(edge_error_ratio*len(edge_list))]
+    noise_edges = []
+    for e in dis_edges:
+        noise_edges.append((e[0], e[1], random.uniform(0.05, 1)))
+    return edge_list[round(edge_error_ratio*len(edge_list)):] + noise_edges
 
 def read_csv_famer_data(input_folder: str, error_edge_ratio=0.1):
     '''
