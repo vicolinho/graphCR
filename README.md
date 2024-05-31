@@ -22,7 +22,7 @@ model_name | name of the llm
 api_key | api key of the of the llm provider 
 initial_training | initial number of training edges(20)
 increment_budget | number of records per iteration in the active learning step(20)
-selection_strategy | {bootstrap, bootstrap_comp = "bootstrap ext"}
+selection_strategy | {bootstrap, bootstrap_comb = "bootstrap ext"}
 output | output file for the quality evaluation 
 output_2 | output file for the initial quality evaluation 
 error_edge_ratio | ratio of edges where noise is added
