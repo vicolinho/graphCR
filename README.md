@@ -1,5 +1,4 @@
-<h2 align="center"> Graph-based Active Learning for Entity Cluster
-Repair</h2>
+<h2 align="center">Graph Metrics-driven Record Cluster Repair meets LLM-based active learning</h2>
 
 
 
