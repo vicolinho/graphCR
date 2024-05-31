@@ -175,7 +175,9 @@ def evaluate(input_folder='E:/data/DS-C/DS-C/DS-C0/SW_0.7',
                 equal_number += np.count_nonzero(new_training_labels == ground_truth)
                 unique_node_pair_ids = numpy.delete(unique_node_pair_ids, rec_pair_ids, axis=0)
                 print(equal_number / (used_budget+increment_budget))
-            info_train_class = np.hstack((info_train_class, new_training_labels))
+                info_train_class = np.hstack((info_train_class, new_training_labels))
+            else:
+                info_train_class = np.hstack((info_train_class, new_training_labels_gt))
             info_train_class_gt = np.hstack((info_train_class_gt, new_training_labels_gt))
             unlabeled_vectors = rem_unlabelled_feat
             unlabeled_classes = rem_unlabelled_class
@@ -242,10 +244,11 @@ def evaluate(input_folder='E:/data/DS-C/DS-C/DS-C0/SW_0.7',
     with open(output, 'a') as result_file:
         if not use_gpt:
             result_file.write(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(data_set, is_edge_wise, error_edge_ratio,
-                                                                                  selection_strategy, threshold,
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(data_set, is_edge_wise, error_edge_ratio,
+                                                                                  'perfect', selection_strategy, threshold,
                                                                                   total_budget,
                                                                                   increment_budget,
+                                                                                              1.0,
                                                                                   info_train_class_gt.sum() / float(
                                                                                       total_budget),
                                                                                   str(all_features), num_gold, tps,
