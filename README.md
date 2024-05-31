@@ -5,8 +5,7 @@ Repair</h2>
 
 Description
 ========
-This project consists of the source code for the submitted paper with the title "Graph-based Active Learning for Entity Cluster
-Repair".
+This project consists of the source code to repair clusters for multi-source entity resolution. The approach utilizes graph metrics for creating a classification model predicting if a link between two records is correct or not. Due to the requirement of training data, an active learning step is integrated that can use the ground truth as an oracle or large language models connected via an API
 
 
 
@@ -19,7 +18,7 @@ Paramter | Description
 ---------|-------------
 input_folder | folder consisting of a similarity graph
 is_edge_wise | selected samples are edges(true)/(selected samples are cluster(false)) not used
-use_gpt | 0=not used, 1=used, 2= generates the training/validation files to fine tune open ai models
+use_gpt | 0=not used, 1=used, 2= generates the training/validation files to fine-tune OpenAI models
 model_name | name of the llm
 api_key | api key of the of the llm provider 
 initial_training | initial number of training edges(20)
