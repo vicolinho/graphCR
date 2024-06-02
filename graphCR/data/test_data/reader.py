@@ -8,11 +8,11 @@ from typing import List
 
 import matplotlib.pyplot as plt
 
-from lm3kal.data.cluster import Cluster
-from lm3kal.feature_generation import graph_construction
+from graphCR.data.cluster import Cluster
+from graphCR.feature_generation import graph_construction
 
-from lm3kal.data.entity import Entity
-from lm3kal.data.test_data import famer_constant
+from graphCR.data.entity import Entity
+from graphCR.data.test_data import famer_constant
 import networkx as nx
 import csv
 

@@ -44,7 +44,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_dir', '-o', type=str, default='result_al_gpt.csv', help='result directory')
     parser.add_argument('--save_initial', '-o2', type=str, default='result_initial_al.csv', help='input dimension')
     parser.add_argument('--api_key', '-ak', default='', type=str)
-    parser.add_argument('--use_gpt', '-gpt', default=0, type=int, help='0=not used, 1=used')
+    parser.add_argument('--use_gpt', '-gpt', default=1, type=int, help='0=not used, 1=used')
     parser.add_argument('--model_name', '-n', default='gpt-3.5-turbo', type=str, help='model name')
     args = parser.parse_args()
     is_edge_wise = True

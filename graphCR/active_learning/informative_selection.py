@@ -1,17 +1,6 @@
-import math
-import operator
 import random
-from typing import List
 
-import matplotlib.pyplot as plt
-import numpy as np
-from networkx import Graph
-from sklearn.metrics.pairwise import cosine_similarity
-import networkx as nx
 from graphCR.active_learning import classification
-from graphCR.data.cluster import Cluster
-from graphCR.evaluation.quality import metrics
-from multiprocessing import Pool
 
 
 def get_informative_cluster(cluster_list: list, sample_size, cluster_graphs=None):

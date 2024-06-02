@@ -4,7 +4,7 @@ import anthropic
 import itertools
 
 # https://docs.anthropic.com/claude/reference/selecting-a-model
-from lm3kal.active_learning.models.model import Model
+from graphCR.active_learning.models.model import Model
 
 DEFAULT_PARAMETERS = {
     'max_tokens_to_sample': 4096,

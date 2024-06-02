@@ -124,7 +124,8 @@ def bootstrap_cluster_size_selection_edge_wise(model_type, training_feature_edge
 
     remaining_unlabelled_feature_edges = np.delete(unlabelled_feature_edges, next_batch_idxs, axis=0)
     remaining_unlabelled_classes = np.delete(unlabelled_classes, next_batch_idxs, axis=0)
-    return new_vectors, new_classes, remaining_unlabelled_feature_edges, remaining_unlabelled_classes
+    return new_vectors, new_classes, remaining_unlabelled_feature_edges, remaining_unlabelled_classes, next_batch_idxs
+
 
 
 def bootstrap_selection_cluster_wise(model_type, train_graphs_with_features, gold_links, unlabelled_graphs,

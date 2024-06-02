@@ -2,7 +2,7 @@
 import os
 import time
 
-from lm3kal.active_learning.models.model import Model
+from graphCR.active_learning.models.model import Model
 import openai
 from openai import OpenAI
 

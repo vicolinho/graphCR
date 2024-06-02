@@ -28,7 +28,7 @@ def scatter(x, colors, title):
 def scatter_pca(x, colors, title):
     # choose a color palette with seaborn.
     pca = PCA(n_components=2)
-    #result = TSNE(random_state=42).fit_transform(x)
+    # result = TSNE(random_state=42).fit_transform(x)
     result = pca.fit_transform(x)
     num_classes = len(np.unique(colors))
     palette = np.array(sns.color_palette("hls", num_classes))
@@ -36,8 +36,8 @@ def scatter_pca(x, colors, title):
     # create a scatter plot.
     f = plt.figure(figsize=(8, 8))
     ax = plt.subplot(aspect='equal')
-    ax.set_title(title, pad = -10)
-    sc = ax.scatter(result[:, 0], result[:, 1], lw=0, s=40, color=colors)
+    ax.set_title(title, pad=-10)
+    sc = ax.scatter(result[:, 0], result[:, 1], lw=0, s=40, c=colors)
     plt.title = title
     plt.xlim(-25, 25)
     plt.ylim(-25, 25)

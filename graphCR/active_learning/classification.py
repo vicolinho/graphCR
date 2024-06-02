@@ -38,10 +38,12 @@ def generate_edge_training_data(graph_list: List[Graph], gold_links: set = None)
     '''
     labels = list()
     features = list()
+    node_pair_ids = list()
     edge_feature_graph_dict = dict()
     for gid, g in enumerate(graph_list):
         for u, v, d in g.edges(data=True):
             features.append(d[constant.FEATURE_VECTOR])
+            node_pair_ids.append((u, v))
             if str(d[constant.FEATURE_VECTOR]) not in edge_feature_graph_dict:
                 edge_feature_graph_dict[str(d[constant.FEATURE_VECTOR])] = [gid]
             else:
@@ -55,7 +57,7 @@ def generate_edge_training_data(graph_list: List[Graph], gold_links: set = None)
                     labels.append(0)
     features = np.asarray(features)
     labels = np.asarray(labels)
-    return features, labels, edge_feature_graph_dict
+    return features, labels, edge_feature_graph_dict, node_pair_ids
 
 
 def get_model(model_type):

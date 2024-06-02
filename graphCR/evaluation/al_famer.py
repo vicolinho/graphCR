@@ -1,23 +1,20 @@
-import random
 import re
 import sys
 
-import click
-import networkx as nx
-import numpy
-import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from sklearn.manifold import TSNE
-import json
+
+import numpy
+import numpy as np
+
 import graphCR.active_learning.constant as al_const
+from graphCR.active_learning import classification, informative_selection, distribution_analyis
 from graphCR.active_learning.llm_labeling import LLMLabeling
+from graphCR.active_learning.selection_methods import bootstrap, informativeness, farthest_first_selection
 from graphCR.data.test_data import reader, famer_constant
 from graphCR.evaluation.quality import metrics
 from graphCR.evaluation.util import scatter, scatter_pca
 from graphCR.feature_generation import graph_feature_generation, graph_construction
-from graphCR.active_learning import classification, informative_selection, distribution_analyis, llm_labeling
-from graphCR.active_learning.selection_methods import bootstrap, informativeness, farthest_first_selection
 
 
 #edge_features=['bridges', 'betweenness', complete_ratio]
@@ -62,6 +59,7 @@ def evaluate(input_folder='E:/data/DS-C/DS-C/DS-C0/SW_0.7',
         if graph.number_of_nodes() >= min_cluster_size:
             edge_mem = sum([sys.getsizeof(e) for e in graph.edges()])
             node_mem = sum([sys.getsizeof(n) for n in graph.nodes()])
+
             memory += edge_mem + node_mem
             feature_graph = graph_feature_generation.generate_features(graph, filtered_clusters[index], features)
             _, _, feature_graph = graph_feature_generation.link_category_feature(filtered_clusters[index],
@@ -78,6 +76,7 @@ def evaluate(input_folder='E:/data/DS-C/DS-C/DS-C0/SW_0.7',
     assert numpy_edges.shape[1] == len(features) + len(edge_features) + 2 + 1, print(numpy_edges.shape[1])
     print("size(MB):{}".format(memory/1024/1024))
     print("total number of edges:{}".format(numpy_edges.shape[0]))
+    # edgehist, bin_edges_number = informative_selection.get_edge_distribution(graphs_with_features)
     distinct_numpy_edge, unique_indices = np.unique(numpy_edges, return_index=True, axis=0)
     edges_from_graphs = [graphs_with_features[graph_index] for edge_feature in
                          distinct_numpy_edge for graph_index in edge_graph_dict[str(edge_feature)]]
@@ -89,14 +88,18 @@ def evaluate(input_folder='E:/data/DS-C/DS-C/DS-C0/SW_0.7',
                                                         increment_budget), plotting=True)
 
     unlabelled_graphs = []
+    # distinct_numpy_edge, edge_graph_dict = graph_feature_generation.normalize_numpy(distinct_numpy_edge, edge_graph_dict)
     unique_labels = labels[unique_indices]
     unique_node_pair_ids = np.asarray(node_pair_ids)[unique_indices]
     print("total number of unique edges:{}".format(distinct_numpy_edge.shape[0]))
     print("total number of unique labels:{}".format(unique_labels.shape[0]))
     if is_edge_wise:
+        # current_train_vectors, current_train_class = informative_selection.farthest_first_selection(numpy_edges, labels,
+        #                                                                          initial_training)
         only_one_class = True
         while only_one_class:
             seed_index = farthest_first_selection.graipher(distinct_numpy_edge, initial_training)
+            # seed_index = np.random.choice(numpy_edges.shape[0], initial_training, replace=False)
             info_train_vectors = distinct_numpy_edge[seed_index]
             if use_gpt == 1:
                 train_pair_ids = unique_node_pair_ids[seed_index]
@@ -119,8 +122,6 @@ def evaluate(input_folder='E:/data/DS-C/DS-C/DS-C0/SW_0.7',
         if use_gpt == 2:
             suffix = data_set + "_" + str(threshold)
             llm_labeler.fine_tune_model(model_name, train_pair_ids, entities, considered_atts, info_train_class_gt, suffix)
-            print("write json training and valdidation file exit()")
-            exit(0)
         scatter_pca(info_train_vectors, ['blue' if c == 1 else 'red' for c in info_train_class], 'farthest first')
         if use_gpt:
             unique_node_pair_ids = numpy.delete(unique_node_pair_ids, seed_index, axis=0)
@@ -138,7 +139,32 @@ def evaluate(input_folder='E:/data/DS-C/DS-C/DS-C0/SW_0.7',
 
     while used_budget < total_budget:
         if is_edge_wise:
-            if selection_strategy == 'bootstrap':
+            if selection_strategy == 'info':
+                new_training_features, new_training_labels, rem_unlabelled_feat, rem_unlabelled_class = \
+                    informativeness.informative_selection_edge_wise(info_train_vectors, info_train_class,
+                                                                          unlabeled_vectors, unlabeled_classes,
+                                                                          increment_budget)
+            elif selection_strategy == 'info_opt':
+                edges_from_graphs = [graphs_with_features[graph_index] for edge_feature in
+                                     info_train_vectors for graph_index in edge_graph_dict[str(edge_feature)]]
+                is_plotting = used_budget + increment_budget >= total_budget
+                train_distribution, train_bins = distribution_analyis.get_node_distribution(edges_from_graphs,
+                                                                                            max_number,
+                                                                                            "training sel={} edge_wise={} b={} i={} used={}"
+                                                                                            .format(selection_strategy,
+                                                                                                    is_edge_wise,
+                                                                                                    total_budget,
+                                                                                                    increment_budget,
+                                                                                                    used_budget),
+                                                                                            plotting=is_plotting)
+                current_prec = info_train_class.sum()/info_train_class.shape[0]
+                new_training_features, new_training_labels, rem_unlabelled_feat, rem_unlabelled_class = \
+                    informativeness.informative_selection_edge_wise_opt(info_train_vectors, info_train_class,
+                                                                              unlabeled_vectors, unlabeled_classes,
+                                                                              increment_budget, edge_graph_dict,
+                                                                        graphs_with_features, total_node_dis,
+                                                                                     train_distribution, total_bins, current_prec, p)
+            elif selection_strategy == 'bootstrap':
                 new_training_features, new_training_labels_gt, rem_unlabelled_feat, rem_unlabelled_class, rec_pair_ids = \
                     bootstrap.bootstrap_selection_edge_wise(al_const.DECISION_TREE,
                                                                         info_train_vectors,
@@ -149,7 +175,8 @@ def evaluate(input_folder='E:/data/DS-C/DS-C/DS-C0/SW_0.7',
             elif selection_strategy == 'bootstrap_comb':
                 edges_from_graphs = [graphs_with_features[graph_index] for edge_feature in
                                      info_train_vectors for graph_index in edge_graph_dict[str(edge_feature)]]
-                is_plotting = used_budget + increment_budget >= total_budget
+                #is_plotting = used_budget + increment_budget >= total_budget
+                is_plotting = True
                 train_distribution, train_bins = distribution_analyis.get_node_distribution(edges_from_graphs, max_number,
                                                              "training sel={} edge_wise={} b={} i={} used={}"
                                                             .format(selection_strategy, is_edge_wise, total_budget,
@@ -201,14 +228,54 @@ def evaluate(input_folder='E:/data/DS-C/DS-C/DS-C0/SW_0.7',
             train_clusters.extend(selected_clusters)
             edge_counts = [g.number_of_edges() for g in selected_graphs]
             used_budget += np.asarray(edge_counts).sum()
+    if not is_edge_wise:
+        print("training graphs before {}".format(len(training_graphs)))
+        new_graphs, new_clusters = informative_selection.graph_augmentation(training_graphs, train_clusters, gold_links,
+                                                                            features, is_normalized=False,
+                                                                            other_graphs=unlabelled_graphs,
+                                                                            expected_hist=hist, bins=bin_edges,
+                                                                            distribution_tol=0.1)
+        new_cid = 0
+        for aug_graph in new_graphs:
+            aug_feature_graph = graph_feature_generation.generate_features(aug_graph, new_clusters[new_cid],
+                                                                           features)
+            _, _, aug_feature_graph = graph_feature_generation.link_category_feature(new_clusters[new_cid],
+                                                                                     aug_feature_graph)
+            aug_feature_graph = graph_feature_generation.edge_feature_generation(aug_feature_graph, edge_features)
+            training_graphs.append(aug_feature_graph)
+            new_cid += 1
+        print("training graphs after {}".format(len(training_graphs)))
+        print("augmented graphs {}".format(len(new_graphs)))
+        info_train_vectors, info_train_class = classification.generate_edge_training_data(training_graphs,
+                                                                                          gold_links)
     predicted_clusters = []
 
     print("training data size: {}".format(info_train_vectors.shape))
     print("number of matches in training: {}".format(info_train_class.sum()))
     model = classification.train_by_numpy_edges(info_train_vectors, info_train_class, model_type, False)
+    importance = model.feature_importances_
+    std = np.std([tree.feature_importances_ for tree in model.estimators_], axis=0)
     all_features = features.copy()
     all_features.extend(['normal_link_ratio', 'strong_link_ratio', 'sim'])
     all_features.extend(edge_features)
+    print(all_features)
+    print(importance)
+    with open(output+"_importance.csv", 'a') as importance_file:
+        importance_file.write(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(data_set, is_edge_wise, error_edge_ratio,
+                                                                                  selection_strategy, threshold,
+                                                                                  total_budget,
+                                                                                  increment_budget,
+                                                                                  info_train_class.sum() / float(
+                                                                                      total_budget),
+                                                                                  str(features), str(importance), str(std)))
+
+        importance_file.close()
+
+
+    # model, encoder = classification.train_by_numpy_edges_nn(info_train_vectors, info_train_class, 100,
+    #                                                       dims_enc=[32, 16])
+    # reduced_data = encoder.predict(current_train_vectors)
     colors = []
     for c in info_train_class:
         if c == 1:
@@ -228,8 +295,27 @@ def evaluate(input_folder='E:/data/DS-C/DS-C/DS-C0/SW_0.7',
 
             cleaned_clusters = classification.handle_cluster_by_edges_with_support(model, cluster,
                                                                                    graphs_with_features[index])
+            # cleaned_clusters = classification.handle_cluster_by_edges(model, cluster, graphs_with_features[index], features,
+            #                                                       cleaned_clusters,
+            #                                                       recursively=True,
+            #                                                       is_normalized=False, other_graphs=other_graphs)
         pred_links = metrics.generate_links(cleaned_clusters)
         _, _, tps_after, _, _, _ = metrics.compute_quality_with_edge_sets(pred_links, gold_links)
+        if tps_after < tps_before:
+            # print("tps: {} after {}".format(tps_before, tps_after))
+            colors = []
+            styles = []
+            weights = []
+            for u, v in graphs_with_features[index].edges():
+                weights.append(graphs_with_features[index][u][v]['sim'])
+                if tuple(sorted((u, v))) in gold_links and tuple(sorted((u, v))) in pred_links:
+                    colors.append('g')
+                elif tuple(sorted((u, v))) in gold_links and tuple(sorted((u, v))) not in pred_links:
+                    colors.append('y')
+                elif tuple(sorted((u, v))) not in gold_links and tuple(sorted((u, v))) not in pred_links:
+                    colors.append('b')
+                else:
+                    colors.append('r')
         predicted_clusters.extend(cleaned_clusters)
     print("number of predicted clusters {}".format(len(predicted_clusters)))
     frequency_dis = metrics.compute_cluster_stats(cluster_list)
@@ -244,16 +330,22 @@ def evaluate(input_folder='E:/data/DS-C/DS-C/DS-C0/SW_0.7',
     with open(output, 'a') as result_file:
         if not use_gpt:
             result_file.write(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(data_set, is_edge_wise, error_edge_ratio,
-                                                                                  'perfect', selection_strategy, threshold,
-                                                                                  total_budget,
-                                                                                  increment_budget,
-                                                                                              1.0,
-                                                                                  info_train_class_gt.sum() / float(
-                                                                                      total_budget),
-                                                                                  str(all_features), num_gold, tps,
-                                                                                  num_pred - tps,
-                                                                                  num_gold - tps, p, r, f))
+                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(data_set,
+                                                                                                  is_edge_wise,
+                                                                                                  error_edge_ratio,
+                                                                                                  'perfect',
+                                                                                                  selection_strategy,
+                                                                                                  threshold,
+                                                                                                  total_budget,
+                                                                                                  increment_budget,
+                                                                                                  1.0,
+                                                                                                  info_train_class_gt.sum() / float(
+                                                                                                      total_budget),
+                                                                                                  str(all_features),
+                                                                                                  num_gold, tps,
+                                                                                                  num_pred - tps,
+                                                                                                  num_gold - tps, p, r,
+                                                                                                  f))
         else:
             result_file.write(
                 "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(data_set, is_edge_wise,
